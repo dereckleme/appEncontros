@@ -1,0 +1,403 @@
+/**
+ * Sample React Native App
+ * https://github.com/facebook/react-native
+ *
+ * @format
+ * @flow
+ */
+
+import React, {Component} from 'react';
+import {Platform, StyleSheet, Text, View, FlatList, Button, Image, TextInput, TouchableHighlight} from 'react-native';
+import { Avatar, Badge, Icon, withBadge, Header, List, ListItem, SearchBar, Bottom } from 'react-native-elements'
+import MapView from 'react-native-maps'
+
+type Props = {};
+export default class App extends Component<Props> {
+
+  eventsEntred = [];
+  liveUpdatePessoas = null;
+
+  state = {
+      eventos: [],
+      location: null,
+      latitude: 0,
+      longitude: 0,
+      pesssoasEvento: [],
+      selectedEvento: null,
+      selectedEventoCoords: {latitude:0, longitude: 0, id: null},
+      enterEvent: null ,
+      deviceId: null,
+      junteseEvento:false,
+      userRegistred:false
+    };
+
+  constructor(props) {
+    super(props); 
+    this.findCoordinates();
+    this._getEvents();
+  }
+
+  _getEvents = () => {
+    fetch('http://casamentomaynaraedereck.com.br/systemEncontro/app_eventos_server/public/index.php/eventos')
+      .then((response) => response.json())
+      .then((responseJson) => {
+          this.setState({ eventos : responseJson });
+      })
+      .catch((error) =>{ alert(error)});
+  }
+
+  async findCoordinates() {       
+        await navigator.geolocation.watchPosition(
+            (position) => {
+                const location = position;
+
+                this.setState({ 
+                      location : location,
+                      latitude : position.coords.latitude,
+                      longitude : position.coords.longitude,
+                    });
+                let params = {
+                      deviceId: this.state.deviceId
+                    }
+
+                if (this.state.userRegistred) {
+                     this.eventsEntred.map((eventoId) => {
+                          this._registerUserPosition(eventoId, params.deviceId);
+                      });
+                }
+            },
+            (error) => {alert("Não conseguimos obter sua posição por GPS.")},
+            { enableHighAccuracy: false, timeout: 90000, maximumAge: 1000 }
+        );
+    };
+
+  clickEvent = (eventId) => {
+      this._getPesssoasEvento(eventId);
+      this._getCoordsEvento(eventId);
+      this.setState({ 
+          enterEvent: true
+        });
+
+      clearInterval(this.liveUpdatePessoas);
+      this.liveUpdatePessoas = setInterval(this._liveUpdatePessoas.bind(this), 3000);
+  };
+
+  backToHome = () => {
+     this._getEvents();
+     this.setState({ 
+          enterEvent: false
+        });
+     clearInterval(this.liveUpdatePessoas);
+  }
+
+  _getCoordsEvento(eventoId) {
+      fetch('http://casamentomaynaraedereck.com.br/systemEncontro/app_eventos_server/public/index.php/eventos/dados/' + eventoId)
+      .then((response) => response.json())
+      .then((responseJson) => {
+          this.setState({ selectedEventoCoords : responseJson });
+      })
+      .catch((error) =>{ alert(error)});
+  }
+
+  _getPesssoasEvento(eventoId) {
+      fetch('http://casamentomaynaraedereck.com.br/systemEncontro/app_eventos_server/public/index.php/eventos/pesssoas/' + eventoId)
+      .then((response) => response.json())
+      .then((responseJson) => {
+          this.setState({ pesssoasEvento : responseJson });
+      }) 
+      .catch((error) =>{ alert(error)});
+  }
+
+  _junteseaction = () => {
+      evento = this.state.selectedEventoCoords;
+      
+      if (this.eventsEntred.indexOf(this.state.selectedEventoCoords.id) == "-1") {
+          this.setState({ junteseEvento : true });
+      }
+  }
+
+  _anonimoAction = () => {
+    if (this.state.deviceId == null) {
+      var hash = this._generateHash();
+    } else {
+      var hash = this.state.deviceId;
+    }
+    
+    var eventoId = this.state.selectedEventoCoords.id;
+    this.setState({ 
+      junteseEvento : false,
+       deviceId: hash,
+       userRegistred: true
+    });
+    this._registerUserEvent(eventoId, hash);
+  }
+
+  _registerUserEvent = (eventoId, deviceId) => {
+      this._registerUserPosition(eventoId, deviceId);
+      this.eventsEntred.push(eventoId);
+   }
+
+   _registerUserPosition = (eventoId, deviceId) => {
+    fetch('http://casamentomaynaraedereck.com.br/systemEncontro/app_eventos_server/public/index.php/eventos/register/'+eventoId+'/'+deviceId+"?XDEBUG_SESSION_START=1&latitude="+this.state.latitude+"&longitude="+this.state.longitude, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        }
+      });
+   }
+
+  _generateHash() {
+      return '_' + Math.random().toString(36).substr(2, 9);
+  };
+
+  _liveUpdatePessoas() {
+    if (this.state.selectedEventoCoords.id != null) {
+         this._getPesssoasEvento(this.state.selectedEventoCoords.id)
+      }
+  }
+
+  renderSeparator = () => {
+    return (
+      <View
+        style={{
+          height: 1,
+          width: "83%",
+          backgroundColor: "#CED0CE",
+          marginLeft: "14%"
+        }}
+      />
+    );
+  };
+
+  render() {
+    if (this.state.enterEvent && this.state.selectedEventoCoords != null && this.state.junteseEvento == true) {
+      return (
+          <View style={styles.container_login}>
+        <View style={styles.inputContainer}>
+          <Image style={styles.inputIcon} source={{uri: 'https://png.icons8.com/message/ultraviolet/50/3498db'}}/>
+          <TextInput style={styles.inputs}
+              placeholder="Email"
+              keyboardType="email-address"
+              underlineColorAndroid='transparent'
+              onChangeText={(email) => this.setState({email})}/>
+        </View>
+        
+        <View style={styles.inputContainer}>
+          <Image style={styles.inputIcon} source={{uri: 'https://png.icons8.com/key-2/ultraviolet/50/3498db'}}/>
+          <TextInput style={styles.inputs}
+              placeholder="Password"
+              secureTextEntry={true}
+              underlineColorAndroid='transparent'
+              onChangeText={(password) => this.setState({password})}/>
+        </View>
+
+        <TouchableHighlight style={[styles.buttonContainer, styles.loginButton]} onPress={() => this.onClickListener('login')}>
+          <Text style={styles.loginText}>Login</Text>
+        </TouchableHighlight>
+
+        <TouchableHighlight style={styles.buttonContainer} onPress={this._anonimoAction}>
+            <Text>Acesso anonimo?</Text>
+        </TouchableHighlight>
+
+        <TouchableHighlight style={styles.buttonContainer} onPress={() => this.onClickListener('register')}>
+            <Text>Cadastrar</Text>
+        </TouchableHighlight>
+      </View>
+      ) 
+    } else if (this.state.enterEvent && this.state.selectedEventoCoords != null && this.state.junteseEvento == false) {
+      let messageButton;
+        if (this.eventsEntred.indexOf(this.state.selectedEventoCoords.id) == "-1") {
+            messageButton = "Junte-se ao Evento"
+        } else {
+            messageButton = "Sair do Evento"
+        }
+
+return (
+      <View style={styles.container}>
+      <Header
+          leftComponent={{ text: "N°"+this.state.selectedEventoCoords.totalPessoas,style: { color: '#fff', fontSize: 14 }}}
+          centerComponent={{ text: this.state.selectedEventoCoords.titulo, style: { color: '#fff', fontSize: 14 }  }}
+          rightComponent={{ icon: 'room', color: '#fff' }}
+        />
+        <MapView style={{flex: 1}} initialRegion={{
+            latitude: parseFloat(this.state.selectedEventoCoords.latitude),
+            longitude: parseFloat(this.state.selectedEventoCoords.longitude),
+            latitudeDelta: 0.020,
+            longitudeDelta: 0.020,
+        }}> 
+            <MapView.Marker  coordinate={{latitude: parseFloat(this.state.selectedEventoCoords.latitude),
+                  longitude: parseFloat(this.state.selectedEventoCoords.longitude)}}  title={"Local do Evento: " + this.state.selectedEventoCoords.titulo}>
+                  <Image source={require('./assets/flag-blue.png')} style={{height: 80, width:80 }} />
+                  </MapView.Marker>
+
+                  {this.state.pesssoasEvento.map(marker => { 
+                    return(
+                      <MapView.Marker coordinate={{latitude: parseFloat(marker.latitude),
+                      longitude: parseFloat(marker.longitude)}}  title={marker.nome}>
+                      <Image source={require('./assets/icons8-web-accessibility-50.png')} style={{height: 45, width:45 }} />
+                      </MapView.Marker>
+                    );
+                  })}
+
+
+            </MapView>
+
+             <View style={{flex: 0.13}}>
+                   <Button style={{ width: '100%',
+                                    height: '30%',
+                                    justifyContent: 'center',
+                                    alignItems: 'center' }}
+                        title={messageButton}
+                        color="red"
+                        onPress={this._junteseaction}
+                  />
+                  <Button style={{ width: '100%',
+                  paddingTop: 20,
+                  height: '30%',
+                  justifyContent: 'center',
+                  alignItems: 'center' }}
+                        title="Voltar"
+                        onPress={this.backToHome}
+                  />
+                </View>
+      </View>
+      )
+    } else if (this.state.enterEvent && this.state.selectedEventoCoords == null) {
+              return (<View style={{flex: 1}}>
+              <Text>Carregando...</Text>    
+          </View>);
+        } else {
+    return (
+      <View style={styles.container}>
+<Header
+          centerComponent={{ text: 'ENCONTRE UM EVENTO', style: { color: '#fff', fontSize: 14 } }}
+          rightComponent={{ icon: 'explore', color: '#fff' }}
+        />
+        <View style={{
+    minHeight: '0%',
+    maxHeight: 250,
+                }}>
+            <FlatList
+            data={this.state.eventos}
+            ItemSeparatorComponent={this.renderSeparator}
+            renderItem={({ item }) => (
+              <ListItem
+                rigthIcon={{ name: 'room' }}
+                onPress={() => this.clickEvent(item.id)}
+                leftIcon={{ name: 'room' }}
+                roundAvatar
+                keyExtractor={item => item.name}
+                title={`${item.name}`}
+                badge={{ value: item.totalPessoas }}
+                subtitle={
+                <View style={styles.subtitleView}>
+                  <Text style={styles.ratingText}>Expira em 2 horas</Text>
+                </View>
+              }
+              />
+            )}
+          />
+        </View> 
+        <View style={{flex: 0.1}}>
+                <Button
+                        title="Criar Evento"
+                        color="red"
+                        name="criar_evento"
+                  />
+            </View> 
+        <View style={{flex: 1}}>
+              <MapView style={{flex: 1}} initialRegion={{
+                    latitude: this.state.latitude,
+                    longitude: this.state.longitude,
+                    latitudeDelta: 0.003,
+                    longitudeDelta: 0.003
+                     }}>
+
+                <MapView.Marker coordinate={{latitude: this.state.latitude,
+                        longitude: this.state.longitude}}  title="Minha Posição"/>
+
+                        {this.state.eventos.map(marker => { 
+                            return(
+                              <MapView.Marker coordinate={{latitude: parseFloat(marker.latitude),
+                              longitude: parseFloat(marker.longitude)}}  title={marker.name}>
+                              <Image source={require('./assets/flag-blue.png')} style={{height: 80, width:80 }} />
+                              </MapView.Marker>
+                            );
+                          })}
+                      </MapView>
+        </View>
+        <View style={{flex:0.05, justifyContent: 'center', alignItems: 'center'}}>
+                        <Text>ENCONTRE EVENTOS PROXIMO A SUA LOCALIZAÇÃO</Text>
+                      </View>
+      </View>
+    );
+  }
+  }
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
+  container_login: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ecf0f1'
+  },
+  subtitleView: {
+    flexDirection: 'row',
+    paddingLeft: 10,
+    paddingTop: 5
+  },
+  
+
+
+
+
+  inputContainer: {
+      borderBottomColor: '#F5FCFF',
+      backgroundColor: '#FFFFFF',
+      borderRadius:30,
+      borderBottomWidth: 1,
+      width:250,
+      height:45,
+      marginBottom:20,
+      flexDirection: 'row',
+      alignItems:'center'
+  },
+  inputs:{
+      height:45,
+      marginLeft:16,
+      borderBottomColor: '#FFFFFF',
+      flex:1,
+  },
+  inputIcon:{
+    width:30,
+    height:30,
+    marginLeft:15,
+    justifyContent: 'center'
+  },
+  buttonContainer: {
+    height:45,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom:20,
+    width:250,
+    borderRadius:30,
+  },
+  loginButton: {
+    backgroundColor: "#00b5ec",
+  },
+  loginText: {
+    color: 'white',
+  },
+  container_login: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#DCDCDC',
+  },
+});

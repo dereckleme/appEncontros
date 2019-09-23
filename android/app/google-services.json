@@ -1,0 +1,56 @@
+{
+  "project_info": {
+    "project_number": "1069323375086",
+    "firebase_url": "https://encontrosapp.firebaseio.com",
+    "project_id": "encontrosapp",
+    "storage_bucket": "encontrosapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1069323375086:android:fd71d288a0753b5ee4beff",
+        "android_client_info": {
+          "package_name": "com.encontroscarros"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1069323375086-ng5bb3shg9m7284o24ut1v9tt6e45s7b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.encontroscarros",
+            "certificate_hash": "a6a188329b652e0394a4162d4008db6cd8825af0"
+          }
+        },
+        {
+          "client_id": "1069323375086-pkr3djskh3qb7oija7goukikfjhoac7g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.encontroscarros",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "1069323375086-idhrn6g3gl396scsafqglj0fmg7k3kq5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB_iaLy031ya4IA9nhs6QhPIpF05CtnyUs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1069323375086-idhrn6g3gl396scsafqglj0fmg7k3kq5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
