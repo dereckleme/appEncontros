@@ -21,17 +21,39 @@ class Login extends Component {
         const isSignedIn = await GoogleSignin.isSignedIn();
   
         if (isSignedIn) {
+          var eventoId = this.props.store.eventoIdSelected;
             this.props.dispatch({
               type: 'SIGNEDIN',
+              junteseEvento : false,
               deviceId: userInfo.user.email,
               userRegistred: true
             });
+            this._registerUserEvent(eventoId, userInfo.user.email);
         }
   
       } catch (err) {
         alert(err.message);
       }
     };
+
+    _registerUserEvent = (eventoId, deviceId) => {
+      this._registerUserPosition(eventoId, deviceId);
+      this.props.dispatch({
+        type: 'ENTER_EVENT',
+        eventoId : eventoId,
+        eventsEntred : this.props.store.eventsEntred
+      });
+    }
+
+    _registerUserPosition = (eventoId, deviceId) => {
+      fetch('http://casamentomaynaraedereck.com.br/systemEncontro/app_eventos_server/public/index.php/eventos/register/'+eventoId+'/'+deviceId+"?XDEBUG_SESSION_START=1&latitude="+this.props.store.latitude+"&longitude="+this.props.store.longitude, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          }
+        });
+     }
 
     render() {
       return (

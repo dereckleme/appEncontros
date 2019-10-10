@@ -5,43 +5,90 @@
   import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
   import Dialog from "react-native-dialog";
   import { GoogleSignin, GoogleSigninButton, statusCodes } from 'react-native-google-signin';
+  import { connect } from 'react-redux';
+  import { bindActionCreators } from 'redux';
 
-  class Home extends Component { 				 	
-      static propTypes = {									
-			 teste: 'aew'						
-      }; 	
-
-      state = {
-        eventos: [],
-        location: null,
-        latitude: -23.550520,
-        longitude: -46.633308,
-        pesssoasEvento: [],
-        selectedEvento: null,
-        selectedEventoCoords: {latitude:0, longitude: 0, id: null},
-        enterEvent: null ,
-        deviceId: null,
-        junteseEvento:false,
-        userRegistred:false,
-        createEvent:false,
-        createEventSelectedAddress:null,
-        createEventName:null,
-        dialogVisible: false
-      };
-
+  class Home extends Component { 	
       constructor(props) {
-    		super(props);
-    		this._getEvents();
+        super(props); 
+        this._getEvents(props.dispatch);
       }
+      
+      _liveUpdatePessoas() {
+          if (this.props.store.selectedEventoCoords.id != null) {
+               this._getPesssoasEvento(this.props.store.selectedEventoCoords.id)
+            }
+        }
 
       _getEvents = () => {
         fetch('http://casamentomaynaraedereck.com.br/systemEncontro/app_eventos_server/public/index.php/eventos')
           .then((response) => response.json())
           .then((responseJson) => {
-              this.setState({ eventos : responseJson });
+              this.props.dispatch({
+                type: 'EVENTOS_UPDATE',
+                eventos: responseJson
+              });
           })
           .catch((error) =>{ alert(error)});
       }
+
+      clickEvent = (eventId) => {
+          this._getPesssoasEvento(eventId);
+          this._getCoordsEvento(eventId);
+          setTimeout(function(){ 
+            this.dispatch({
+              type: 'EVENTO_ENTER',
+              enterEvent: true
+            });
+          }.bind(this.props), 500);
+         
+          /* LIVE PESSOAS REFACTOR
+          clearInterval(this.liveUpdatePessoas);
+          this.liveUpdatePessoas = setInterval(this._liveUpdatePessoas.bind(this), 3000);
+          */
+      };
+
+      _getPesssoasEvento(eventoId) {
+        fetch('http://casamentomaynaraedereck.com.br/systemEncontro/app_eventos_server/public/index.php/eventos/pesssoas/' + eventoId)
+        .then((response) => response.json())
+        .then((responseJson) => {
+            this.props.dispatch({
+              type: 'COORDS_EVENTO_PESSOAS',
+              EventoCoordsPessoas: responseJson
+            });
+
+            console.log(responseJson);
+        }) 
+        .catch((error) =>{ alert(error)});
+      }
+
+      _getCoordsEvento(eventoId) {
+          let eventId = eventoId;
+          fetch('http://casamentomaynaraedereck.com.br/systemEncontro/app_eventos_server/public/index.php/eventos/dados/' + eventoId)
+          .then((response) => response.json())
+          .then((responseJson) => {
+            console.log(eventoId);
+            
+              this.props.dispatch({
+                type: 'COORDS_EVENTO',
+                selectedEventoCoords: responseJson
+              });
+              console.log(responseJson);
+
+              this.props.dispatch({
+                type: 'EVENTO_ID_SELECTED',
+                eventoId: eventId
+              });
+          })
+          .catch((error) =>{ alert(error)});
+      }
+
+      _createEvent =  () => {
+        this.props.dispatch({
+          type: 'CREATE_EVENT',
+          createEvent: true
+        });
+       }
 
       render() {
         return (
@@ -55,10 +102,11 @@
             maxHeight: 250,
                         }}>
                     <FlatList
-                    data={this.state.eventos}
+                    data={this.props.store.eventos}
                     ItemSeparatorComponent={this.renderSeparator}
                     renderItem={({ item }) => (
                       <ListItem
+                        key= {item.id}
                         rigthIcon={{ name: 'room' }}
                         onPress={() => this.clickEvent(item.id)}
                         leftIcon={{ name: 'room' }}
@@ -85,17 +133,17 @@
                     </View> 
                 <View style={{flex: 1}}>
                       <MapView style={{flex: 1}} initialRegion={{
-                            latitude: this.state.latitude,
-                            longitude: this.state.longitude,
+                            latitude: this.props.store.latitude,
+                            longitude: this.props.store.longitude,
                             latitudeDelta: 0.503,
                             longitudeDelta: 0.503
                              }}>
 
-                        <MapView.Marker coordinate={{latitude: this.state.latitude,
-                                longitude: this.state.longitude}}  title="Minha Posição">
+                        <MapView.Marker coordinate={{latitude: this.props.store.latitude,
+                                longitude: this.props.store.longitude}}  title="Minha Posição">
                                   <Image source={require('../assets/flag-mi.png')} style={{height: 80, width:80 }} />
                                       </MapView.Marker>
-                                {this.state.eventos.map(marker => { 
+                                {this.props.store.eventos.map(marker => { 
                                     return(
                                       <MapView.Marker coordinate={{latitude: parseFloat(marker.latitude),
                                       longitude: parseFloat(marker.longitude)}}  title={marker.name}>
@@ -128,10 +176,6 @@
     paddingLeft: 10,
     paddingTop: 5
   },
-  
-
-
-
 
   inputContainer: {
       borderBottomColor: '#F5FCFF',
@@ -179,4 +223,4 @@
   },
 });
 
- export default Home;
+export default connect(store => ({store: store.application}))(Home);
