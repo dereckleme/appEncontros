@@ -7,6 +7,8 @@
   import { GoogleSignin, GoogleSigninButton, statusCodes } from 'react-native-google-signin';
   import { connect } from 'react-redux';
   import { bindActionCreators } from 'redux';
+  import CountDown from 'react-native-countdown-component';
+
 
   class Home extends Component { 	
       constructor(props) {
@@ -116,7 +118,25 @@
                         badge={{ value: item.totalPessoas }}
                         subtitle={
                         <View style={styles.subtitleView}>
-                          <Text style={styles.ratingText}>Expira em 2 horas</Text>
+                          <View style={{flex: 0.5,
+                          size:13,
+    justifyContent: 'center',
+    alignItems: 'center'}}><Text>Expira em:</Text></View>
+                          <View style={{flex: 0.3,
+    justifyContent: 'center',
+    alignItems: 'center', }}><CountDown
+                          until={item.secounds}
+                          size={15}
+                          //onFinish={() => alert('Finished')}
+                          digitStyle={{backgroundColor: '#2289dc'}}
+                          digitTxtStyle={{color: '#FFFFFF'}}
+                          timeToShow={['H','M', 'S']}
+                          timeLabels={{h:'',m: '', s: ''}}
+                          showSeparator={true}      
+                          //When component is pressed, updates state to true
+      /></View>
+                          
+                          
                         </View>
                       }
                       />

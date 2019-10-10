@@ -36,6 +36,7 @@ class Login extends Component {
     render() {
       return (
         <View style={styles.container_login}>
+           <Image source={require('../assets/logo.png')} style={{height: 300, width:300 }} />
           <GoogleSigninButton
         style={{ width: 192, height: 48 }}
         size={GoogleSigninButton.Size.Wide}
@@ -43,9 +44,7 @@ class Login extends Component {
         onPress={this._signIn}
         disabled={this.props.store.isSigninInProgress} />
 
-                <TouchableHighlight style={[styles.buttonContainer, styles.loginButton]} onPress={() => this._anonimoAction()}>
-                  <Text style={styles.loginText}>Acesso anonimo?</Text>
-                </TouchableHighlight>
+                <Text>Encontre pesssoas.</Text>
           </View>
           )
     }
